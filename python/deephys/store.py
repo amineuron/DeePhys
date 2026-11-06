@@ -87,6 +87,10 @@ class FeatureStore:
                     net[c] = v
                 net["QCUnitYield"] = status.get("units", np.nan)
                 recordings.append(net)
+        expected = len(statuses)
+        progress = root / "REPORT_STATUS.json"
+        if progress.exists():
+            expected = json.loads(progress.read_text()).get("expected", expected)
         return cls(
             pd.concat(units, ignore_index=True) if units else pd.DataFrame(),
             pd.concat(recordings, ignore_index=True) if recordings else pd.DataFrame(),
@@ -95,6 +99,7 @@ class FeatureStore:
                 primary_duration_s=300,
                 recordings=list(statuses),
                 E_I_labels="not supplied",
+                expected_recordings=expected,
                 genotype_mapping="unconfirmed",
             ),
         )

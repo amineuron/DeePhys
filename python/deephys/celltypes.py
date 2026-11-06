@@ -85,6 +85,8 @@ def classify_with_seeds(X, unit_ids, seeds, *, neighbors=50, min_score=0.99):
     positions = ids.get_indexer(seeds.UnitID)
     if np.any(positions < 0):
         raise ValueError("seed not present in feature matrix")
+    if not seeds.Label.isin([1, 2]).all():
+        raise ValueError("seed labels must be exactly 1 or 2")
     labels = seeds.Label.to_numpy(int)
     if set(labels) != {1, 2}:
         raise ValueError("both independently supported E and I seeds are required")

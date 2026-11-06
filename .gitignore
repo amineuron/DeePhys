@@ -27,3 +27,9 @@ artifacts/
 *.hdf5
 *.zip
 *.joblib
+*.csv
+*.csv.gz
+*.tsv
+study_data/
+native_exports/
+outputs/

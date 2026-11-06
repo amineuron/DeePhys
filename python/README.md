@@ -15,6 +15,16 @@ deephys-python analyse --native-root /path/to/native_export --output /local/resu
 deephys-python validate --native-root /path/to/native_export --output /local/results/validation
 ```
 
+Once the pooled mixture has been fitted, per-well figures can be generated
+independently of the long cohort embeddings:
+
+```console
+deephys-python wells --native-root /path/to/native_export --output /local/results
+```
+
+Use one writer per output well. The ordinary `analyse` command already publishes
+all wells and skips those with completed report checkpoints.
+
 Open `/local/results/index.html`. It links feature matrices, missingness and
 correlations; PCA/UMAP/t-SNE; random-forest classification and age regression;
 waveform mixtures and per-well Leiden communities; and E/I label requirements.
@@ -64,6 +74,11 @@ importances and are named accordingly. Python forests/embeddings/Leiden are
 independent implementations; the same seed does not imply MATLAB-identical
 stochastic results. N1's extra DIV22 also limits cross-replicate age prediction.
 
+The present Python forest recipe uses scikit-learn's leaf/split defaults
+(1/2), rather than MATLAB's unit-level defaults (5/10); its predictors use
+sqrt(F) features for classification and F/3 for regression. Model benchmarks
+must therefore not be described as exact reproductions of the native forest.
+
 ## Cell-type classification
 
 ```python
@@ -84,6 +99,9 @@ normalization and unknown disconnected components. Scores are graph absorption
 scores, not calibrated biological probabilities. The 0.99 score threshold is
 an explicit companion API choice, not the native full confidence procedure.
 Both independently supported E and I reference labels are required.
+
+The smoothing width is an explicit input. Current reports reuse the native
+split-half-selected width; automatic width selection itself is not ported.
 
 Without such references, the report fits unlabelled 1/2/3-component waveform
 mixtures selected by BIC and phenotype communities. Broad/narrow waveforms

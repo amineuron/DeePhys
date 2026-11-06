@@ -40,3 +40,15 @@ def test_no_mixture_cluster_is_called_excitatory_or_inhibitory():
 def test_uniform_colon_uses_symmetric_right_endpoint():
     edges = colon_edges(0.0, 0.1, 300.0)
     assert len(edges) == 3001 and edges[2453] == 300 - 547 * 0.1
+
+
+def test_fractional_reference_labels_are_rejected_instead_of_truncated():
+    seed = pd.DataFrame(
+        {
+            "UnitID": ["a", "b"],
+            "Label": [1.5, 2.0],
+            "Provenance": ["independent", "independent"],
+        }
+    )
+    with pytest.raises(ValueError, match="exactly 1 or 2"):
+        classify_with_seeds(np.array([[0.0], [1.0]]), ["a", "b"], seed)

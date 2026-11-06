@@ -9,6 +9,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
 from scipy.io import loadmat
 from sklearn.metrics import adjusted_rand_score
 from .store import FeatureStore
@@ -66,9 +67,18 @@ def figure_html(name, title, caption):
 
 
 def report_index(out, store, stages, wells):
+    completed = []
+    for status in (out / "wells").glob("*/STATUS.json"):
+        try:
+            if json.loads(status.read_text()).get("complete"):
+                completed.append(status.parent.name)
+        except json.JSONDecodeError:
+            pass
+    wells = sorted(set(wells) | set(completed))
     stamp = datetime.now(timezone.utc).isoformat()
     b = '<h1>DeePhys Python | Post-sorting analysis</h1><nav><a href="feature_exploration.html">Feature exploration</a><a href="phenotype.html">Phenotype models</a><a href="celltypes.html">Cell-type phenotypes</a><a href="ei.html">E/I analysis and label requirements</a><a href="validation/SUMMARY.json">MATLAB agreement</a></nav>'
-    b += f"<p>{len(store.recordings)} well-days; {len(store.units):,} selected-unit observations. Features are from the native DeePhys exports; independently ported primitives have separate MATLAB agreement results. All primary windows are 300 s.</p>"
+    expected = store.provenance.get("expected_recordings", len(store.recordings))
+    b += f"<p>{len(store.recordings)}/{expected} well-days available; {len(store.units):,} selected-unit observations. Features are from the native DeePhys exports; independently ported primitives have separate MATLAB agreement results. All primary windows are 300 s.</p>"
     b += "<p>Blinded A = wells 1–3; B = wells 4–6. Genotype mapping is unconfirmed. N1 and N3 are two biological replicates; units and repeated days are not independent biological samples.</p>"
     b += (
         "<h2>Live stage status</h2><table><tr><th>Section</th><th>Status</th></tr>"
@@ -158,7 +168,10 @@ def build_feature_exploration(out, store, X, md):
     corr = X[variances].corr(method="spearman")
     corr.to_csv(out / "scalar_feature_spearman.csv")
     fig, ax = plt.subplots(figsize=(7, 5.5), layout="constrained")
-    im = ax.imshow(corr, cmap="RdBu_r", vmin=-1, vmax=1, rasterized=True)
+    correlation_map = LinearSegmentedColormap.from_list(
+        "signed_correlation", ["#f5f5f2", "#b6b6b0", TEAL]
+    )
+    im = ax.imshow(corr, cmap=correlation_map, vmin=-1, vmax=1, rasterized=True)
     labels = [x.replace("InterSpikeInterval", "ISI") for x in variances]
     ax.set(
         xticks=range(len(labels)),
@@ -418,7 +431,14 @@ def build_reports(native_root, output, *, trees=500, do_embeddings=True, do_well
     )
     mixtures = mixtures.reindex(store.units.index)
     mixtures["WaveformCluster"] = mixtures.WaveformCluster.fillna(0).astype(int)
-    mixtures.to_csv(out / "waveform_mixture_units.csv")
+    mixture_export = pd.concat(
+        [
+            store.units[["UnitID", "RecordingID", "OriginalUnitID", "DuplicateReview"]],
+            mixtures,
+        ],
+        axis=1,
+    )
+    mixture_export.to_csv(out / "waveform_mixture_units.csv")
     bic.to_csv(out / "waveform_mixture_BIC.csv", index=False)
     (out / "waveform_mixture_model.json").write_text(
         json.dumps(details, indent=2), encoding="utf-8"
@@ -583,3 +603,60 @@ def build_reports(native_root, output, *, trees=500, do_embeddings=True, do_well
     )
     report_index(out, store, stages, published)
     return store
+
+
+def publish_wells(native_root, output):
+    """Publish per-well figures independently of the long cohort embeddings."""
+    setup_style()
+    root = Path(native_root)
+    out = Path(output)
+    mixture = pd.read_csv(out / "waveform_mixture_units.csv", index_col=0)
+    if not {"RecordingID", "OriginalUnitID"} <= set(mixture):
+        raise ValueError("mixture export needs original unit identities")
+    published = []
+    for key, part in mixture.groupby("RecordingID", sort=True):
+        frame = pd.read_csv(
+            root / "native/primary_300s" / key / "UnitFeatures.csv",
+            usecols=["OriginalUnitID", "HalfWidth", "T2Pdelay"],
+        )
+        np.testing.assert_array_equal(frame.OriginalUnitID, part.OriginalUnitID)
+        frame.index = part.index
+        per_well(out, root, key, frame, mixture)
+        published.append(key)
+        body = (
+            '<nav><a href="index.html">Python overview</a></nav><h1>Per-well Python figures</h1><p>'
+            + str(len(published))
+            + " well-days published. Cohort embeddings and models run in their own lane.</p><ul>"
+        )
+        body += (
+            "".join(
+                '<li><a href="wells/' + k + '/index.html">' + k + "</a></li>"
+                for k in published
+            )
+            + "</ul>"
+        )
+        (out / "per_well.html").write_text(
+            page("Per-well Python figures", body), encoding="utf-8"
+        )
+        (out / "WELLS_PROGRESS.json").write_text(
+            json.dumps(
+                dict(
+                    published=len(published),
+                    expected_available=int(mixture.RecordingID.nunique()),
+                    latest=key,
+                ),
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+        main = out / "index.html"
+        if main.exists():
+            text = main.read_text(encoding="utf-8")
+            if 'id="per-well-lane"' not in text:
+                text = text.replace(
+                    "<nav>",
+                    '<nav><a id="per-well-lane" href="per_well.html">Per-well Python figures</a>',
+                    1,
+                )
+                main.write_text(text, encoding="utf-8")
+    return published

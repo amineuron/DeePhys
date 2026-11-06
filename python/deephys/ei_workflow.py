@@ -51,8 +51,8 @@ def build_ei_reports(native_root, labels_csv, output):
                 dict(
                     RecordingID=key,
                     status="pending both independent seed classes",
-                    E=0,
-                    I=0,
+                    E=None,
+                    I=None,
                     Unknown=n,
                 )
             )

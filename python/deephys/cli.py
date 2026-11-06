@@ -14,7 +14,7 @@ def main():
         os.environ.setdefault(name, "1")
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
-    for name in ["validate", "analyse", "ei"]:
+    for name in ["validate", "analyse", "ei", "wells"]:
         p = sub.add_parser(name)
         p.add_argument("--native-root", required=True, type=Path)
         p.add_argument("--output", required=True, type=Path)
@@ -24,7 +24,7 @@ def main():
             p.add_argument("--skip-wells", action="store_true")
         elif name == "validate":
             p.add_argument("--limit", type=int)
-        else:
+        elif name == "ei":
             p.add_argument("--labels", required=True, type=Path)
     args = parser.parse_args()
     from .safety import install_readonly_guard, is_network_path
@@ -40,6 +40,10 @@ def main():
         rows = validate_native(args.native_root, args.output, limit=args.limit)
         if not all(r["passed"] for r in rows):
             raise SystemExit(1)
+    elif args.command == "wells":
+        from .report import publish_wells
+
+        publish_wells(args.native_root, args.output)
     elif args.command == "ei":
         from .ei_workflow import build_ei_reports
 

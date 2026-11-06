@@ -19,6 +19,7 @@ deephys-python = "deephys.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["python"]
+include = ["deephys*"]
 
 [tool.pytest.ini_options]
 testpaths = ["python/tests"]
