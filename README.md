@@ -18,6 +18,13 @@ Created with [BioRender](https://www.biorender.com)
 - Label excitatory and inhibitory units without patch-clamp (graph label propagation with a tuning-free default pipeline, per-culture composition estimates, confident labels and quality checks)
 - Detect network bursts and quantify E/I activity around them, tested against rate-matched nulls
 
+## Python companion
+
+The `python-port` branch adds a post-sorting Python companion. See
+[usage, coverage and MATLAB validation](python/README.md). The original
+MATLAB implementation remains the reference; this is an alpha companion,
+with parity tracked per function rather than a complete replacement claim.
+
 ## Installation
 The package is ready-to-use right after cloning. Run `startup.m` from the repo root to add all paths.
 

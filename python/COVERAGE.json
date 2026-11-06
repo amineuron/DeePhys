@@ -1,0 +1,9 @@
+{
+  "status": "alpha companion; not complete MATLAB replacement",
+  "reference_commit": "5efdcb82fae3700a179bde10105d9d5dc7743d52",
+  "numerically_tested": ["activity scalars", "seven waveform shape features", "centered ACG", "makima harmonization", "center-preserving ACG smoothing", "global normalization", "exact fuzzy kNN", "clamped propagation", "E/I activity and ratios", "E-dominant states", "leave-one-out correlations with >=2 class members", "empirical STTC"],
+  "independent_python_counterparts": ["random-forest classification/regression", "PCA", "UMAP", "tSNE", "Leiden communities", "exploratory waveform mixtures"],
+  "native_data_bridge": ["full feature matrices", "native QC-selected units", "ISINJoint event boundaries", "reference embedding for partition comparisons"],
+  "not_ported": ["complete native QC", "MATLAB slewrate Rise/Decay", "complete feature catalog", "ISINJoint detector", "DREADD response bootstrap", "enrichment seed selection", "composition estimates/confidence calibration", "full iterative burst-template refinement", "native E/I burst/null suite", "transfer learning and legacy migration"],
+  "real_E_I_labels": "require independently supported references; not fabricated from waveform clusters"
+}

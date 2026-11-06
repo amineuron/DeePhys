@@ -6,3 +6,24 @@ deephys_registry.db
 deephys_registry.db-wal
 deephys_registry.db-shm
 Plots/
+
+# Python companion: code only, never research inputs or generated outputs.
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+.venv/
+venv/
+vendor/
+build/
+dist/
+results/
+artifacts/
+*.mat
+*.npy
+*.npz
+*.h5
+*.hdf5
+*.zip
+*.joblib
